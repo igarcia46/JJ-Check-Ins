@@ -1,15 +1,35 @@
-from repositories.excel_repository import ExcelRepository
-from services.check_in_service import CheckInService
+import cv2
+
+from services.camera_service import CameraService
+from services.photo_service import PhotoService
 
 
-repository = ExcelRepository("data/check_ins.xlsx")
-check_in_service = CheckInService(repository)
+camera_service = CameraService()
+photo_service = PhotoService("data/photos")
 
-record = check_in_service.check_in(
-    name="Jose Smith",
-    email="jose@email.com",
-    phone="317-555-4321",
-    reason="Picking up child",
-)
+try:
+    camera_service.start()
 
-print(record)
+    while True:
+        frame = camera_service.get_frame()
+
+        cv2.imshow("Camera Test", frame)
+
+        key = cv2.waitKey(1)
+
+        if key == ord(" "):
+            photo = camera_service.capture_photo()
+
+            path = photo_service.save_photo(
+                name="Test Visitor",
+                image=photo,
+            )
+
+            print(f"Photo saved: {path}")
+
+        elif key == ord("q"):
+            break
+
+finally:
+    camera_service.release()
+    cv2.destroyAllWindows()
