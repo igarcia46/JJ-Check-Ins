@@ -14,7 +14,7 @@ class MainWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("JJ Check-Ins")
+        self.title("Jonathan Jennings Visitor Check-In")
         self.geometry("1000x1000")
         self.current_screen = "welcome"
 
