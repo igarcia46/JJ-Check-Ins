@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import cv2
 import customtkinter as ctk
-
 from PIL import Image
 
 from services.camera_service import CameraService
@@ -23,13 +24,26 @@ class MainWindow(ctk.CTk):
         self.photo_service = PhotoService("data/photos")
         self.camera_service = CameraService()
 
+        back_arrow_path = (
+            Path(__file__).resolve().parent.parent
+            / "assets"
+            / "icons"
+            / "back-arrow.png"
+        )
+        back_arrow = Image.open(back_arrow_path)
+        self.back_arrow_image = ctk.CTkImage(
+            light_image=back_arrow,
+            dark_image=back_arrow,
+            size=(46, 46),
+        )
+
         self.captured_photo = None
         self.camera_running = False
 
         self.current_frame = None
 
         self.inactivity_timer = None
-        self.inactivity_timeout = 20_000  # 2 minutes
+        self.inactivity_timeout = 90_000  # 1 minute 30 seconds
 
         self.bind_all("<KeyPress>", self._reset_inactivity_timer)
         self.bind_all("<Button>", self._reset_inactivity_timer)
@@ -108,7 +122,8 @@ class MainWindow(ctk.CTk):
     def _build_form_screen(self):
         self.form_back_button = ctk.CTkButton(
             self.form_screen,
-            text="←\nBack",
+            text="",
+            image=self.back_arrow_image,
             width=70,
             height=65,
             font=ctk.CTkFont(size=18, weight="bold"),
@@ -242,7 +257,8 @@ class MainWindow(ctk.CTk):
 
         self.back_button = ctk.CTkButton(
             self.photo_screen,
-            text="←\nBack",
+            text="",
+            image=self.back_arrow_image,
             width=70,
             height=65,
             font=ctk.CTkFont(size=18, weight="bold"),
