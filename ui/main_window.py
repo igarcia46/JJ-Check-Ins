@@ -180,6 +180,8 @@ class MainWindow(ctk.CTk):
         self.form_error_label = ctk.CTkLabel(
             self.form_screen,
             text="",
+            text_color="#E53935",
+            font=ctk.CTkFont(weight="bold"),
         )
         self.form_error_label.pack(pady=10)
 
