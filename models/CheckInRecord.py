@@ -6,7 +6,6 @@ from typing import Optional
 @dataclass
 class CheckInRecord:
     name: str
-    email: Optional[str]
     phone: Optional[str]
     reason: Optional[str]
 

@@ -1,7 +1,8 @@
+from pathlib import Path
+
 import cv2
 import customtkinter as ctk
-
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 from services.camera_service import CameraService
 from services.check_in_service import CheckInService
@@ -15,7 +16,10 @@ class MainWindow(ctk.CTk):
         super().__init__()
 
         self.title("Jonathan Jennings Visitor Check-In")
+        icons_path = Path(__file__).resolve().parent.parent / "assets" / "icons"
+        self.iconbitmap(str(icons_path / "JJ109PrimaryLogo.ico"))
         self.geometry("1000x1000")
+        self.resizable(False, False)
         self.current_screen = "welcome"
 
         self.repository = ExcelRepository("data/check_ins.xlsx")
@@ -23,13 +27,41 @@ class MainWindow(ctk.CTk):
         self.photo_service = PhotoService("data/photos")
         self.camera_service = CameraService()
 
+        back_arrow_path = icons_path / "back-arrow.png"
+        back_arrow = Image.open(back_arrow_path)
+        self.back_arrow_image = ctk.CTkImage(
+            light_image=back_arrow,
+            dark_image=back_arrow,
+            size=(46, 46),
+        )
+
+        welcome_background = Image.open(
+            icons_path / "JJ109PrimaryLogo.webp"
+        )
+        welcome_background = ImageEnhance.Brightness(
+            welcome_background
+        ).enhance(0.35)
+        background_scale = min(
+            800 / welcome_background.width,
+            800 / welcome_background.height,
+        )
+        background_size = (
+            round(welcome_background.width * background_scale),
+            round(welcome_background.height * background_scale),
+        )
+        self.welcome_background_image = ctk.CTkImage(
+            light_image=welcome_background,
+            dark_image=welcome_background,
+            size=background_size,
+        )
+
         self.captured_photo = None
         self.camera_running = False
 
         self.current_frame = None
 
         self.inactivity_timer = None
-        self.inactivity_timeout = 20_000  # 2 minutes
+        self.inactivity_timeout = 90_000  # 1 minute 30 seconds
 
         self.bind_all("<KeyPress>", self._reset_inactivity_timer)
         self.bind_all("<Button>", self._reset_inactivity_timer)
@@ -67,6 +99,17 @@ class MainWindow(ctk.CTk):
     # -------------------------
 
     def _build_welcome_screen(self):
+        self.welcome_background_label = ctk.CTkLabel(
+            self.welcome_screen,
+            text="",
+            image=self.welcome_background_image,
+        )
+        self.welcome_background_label.place(
+            relx=0.5,
+            rely=0.5,
+            anchor="center",
+        )
+
         title = ctk.CTkLabel(
             self.welcome_screen,
             text="Welcome",
@@ -108,7 +151,8 @@ class MainWindow(ctk.CTk):
     def _build_form_screen(self):
         self.form_back_button = ctk.CTkButton(
             self.form_screen,
-            text="←\nBack",
+            text="",
+            image=self.back_arrow_image,
             width=70,
             height=65,
             font=ctk.CTkFont(size=18, weight="bold"),
@@ -138,14 +182,6 @@ class MainWindow(ctk.CTk):
         )
 
         self.name_entry.pack(pady=10)
-
-        self.email_entry = ctk.CTkEntry(
-            self.form_screen,
-            placeholder_text="Email",
-            height=50,
-            width=500,
-        )
-        self.email_entry.pack(pady=10)
 
         self.phone_entry = ctk.CTkEntry(
             self.form_screen,
@@ -188,6 +224,8 @@ class MainWindow(ctk.CTk):
         self.form_error_label = ctk.CTkLabel(
             self.form_screen,
             text="",
+            text_color="#E53935",
+            font=ctk.CTkFont(weight="bold"),
         )
         self.form_error_label.pack(pady=10)
 
@@ -248,7 +286,8 @@ class MainWindow(ctk.CTk):
 
         self.back_button = ctk.CTkButton(
             self.photo_screen,
-            text="←\nBack",
+            text="",
+            image=self.back_arrow_image,
             width=70,
             height=65,
             font=ctk.CTkFont(size=18, weight="bold"),
@@ -430,7 +469,6 @@ class MainWindow(ctk.CTk):
     def _submit_check_in(self):
         try:
             name = self.name_entry.get().strip()
-            email = self.email_entry.get().strip()
             phone = self.phone_entry.get().strip()
             reason = self.reason_entry.get().strip()
 
@@ -441,7 +479,6 @@ class MainWindow(ctk.CTk):
 
             self.check_in_service.check_in(
                 name=name,
-                email=email or None,
                 phone=phone or None,
                 reason=reason or None,
                 photo_path=photo_path,
@@ -533,7 +570,6 @@ class MainWindow(ctk.CTk):
 
     def _clear_form(self):
         self.name_entry.delete(0, "end")
-        self.email_entry.delete(0, "end")
         self.phone_entry.delete(0, "end")
         try:
             self.reason_entry.set("Observation")
