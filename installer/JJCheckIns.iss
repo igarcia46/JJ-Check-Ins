@@ -1,7 +1,7 @@
 [Setup]
 AppId={{9E6F0C3A-2E8A-4E63-9CF0-4B0A3A8D6C11}
 AppName=Jonathan Jennings Visitor Check-In
-AppVersion=1.0.0
+AppVersion=1.0.2
 AppPublisher=Isaac Garcia
 
 DefaultDirName={autopf}\Jonathan Jennings Visitor Check-In
