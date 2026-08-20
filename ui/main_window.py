@@ -218,7 +218,13 @@ class MainWindow(ctk.CTk):
         # create option menu and attempt to style the dropdown button separately
         self.reason_entry = ctk.CTkOptionMenu(
             self.reason_container,
-            values=["Observation", "Meeting", "Doctor"],
+            values=[
+                "Observation/Observación",
+                "Meeting/Reunión",
+                "Lunch with student/Almuerzo con estudiante",
+                "Volunteering/Voluntariado",
+                "Tour/Recorrido escolar",
+            ],
             width=500,
             height=50,
             corner_radius=8,
