@@ -139,14 +139,6 @@ class MainWindow(ctk.CTk):
 
         self.name_entry.pack(pady=10)
 
-        self.email_entry = ctk.CTkEntry(
-            self.form_screen,
-            placeholder_text="Email",
-            height=50,
-            width=500,
-        )
-        self.email_entry.pack(pady=10)
-
         self.phone_entry = ctk.CTkEntry(
             self.form_screen,
             placeholder_text="Phone",
@@ -430,7 +422,6 @@ class MainWindow(ctk.CTk):
     def _submit_check_in(self):
         try:
             name = self.name_entry.get().strip()
-            email = self.email_entry.get().strip()
             phone = self.phone_entry.get().strip()
             reason = self.reason_entry.get().strip()
 
@@ -441,7 +432,6 @@ class MainWindow(ctk.CTk):
 
             self.check_in_service.check_in(
                 name=name,
-                email=email or None,
                 phone=phone or None,
                 reason=reason or None,
                 photo_path=photo_path,
@@ -533,7 +523,6 @@ class MainWindow(ctk.CTk):
 
     def _clear_form(self):
         self.name_entry.delete(0, "end")
-        self.email_entry.delete(0, "end")
         self.phone_entry.delete(0, "end")
         try:
             self.reason_entry.set("Observation")

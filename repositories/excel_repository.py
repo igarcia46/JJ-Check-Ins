@@ -6,7 +6,6 @@ from models.CheckInRecord import CheckInRecord
 class ExcelRepository:
     HEADERS = [
         "Name",
-        "Email",
         "Phone",
         "Reason",
         "Check In Time",
@@ -40,7 +39,6 @@ class ExcelRepository:
 
         sheet.append([
             record.name,
-            record.email,
             record.phone,
             record.reason,
             record.check_in_time,
@@ -60,11 +58,10 @@ class ExcelRepository:
         for row in sheet.iter_rows(min_row=2, values_only=True):
             record = CheckInRecord(
                 name=row[0],
-                email=row[1],
-                phone=row[2],
-                reason=row[3],
-                check_in_time=row[4],
-                photo_path=row[5],
+                phone=row[1],
+                reason=row[2],
+                check_in_time=row[3],
+                photo_path=row[4],
             )
 
             records.append(record)
