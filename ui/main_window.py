@@ -233,7 +233,7 @@ class MainWindow(ctk.CTk):
             button_hover_color="#1f538d",
         )
 
-        self.reason_entry.set("Observation")
+        self.reason_entry.set("Observation/Observación")
         self.reason_entry.pack()
 
         self.form_error_label = ctk.CTkLabel(
