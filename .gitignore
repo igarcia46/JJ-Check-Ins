@@ -1,4 +1,21 @@
-data/
-
+# Python
 __pycache__/
 *.pyc
+
+# Virtual environment
+.venv/
+venv/
+
+# PyInstaller
+build/
+dist/
+
+# Inno Setup output
+installer/output/
+
+# Local visitor data
+data/
+*.xlsx
+
+# IDE
+.vscode/

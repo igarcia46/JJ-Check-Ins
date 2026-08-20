@@ -9,6 +9,11 @@ from services.check_in_service import CheckInService
 from services.photo_service import PhotoService
 from repositories.excel_repository import ExcelRepository
 
+from utils.paths import (
+    get_excel_path,
+    get_photo_directory,
+)
+
 
 class MainWindow(ctk.CTk):
 
@@ -22,9 +27,13 @@ class MainWindow(ctk.CTk):
         self.resizable(False, False)
         self.current_screen = "welcome"
 
-        self.repository = ExcelRepository("data/check_ins.xlsx")
+        self.repository = ExcelRepository(
+            get_excel_path()
+        )
         self.check_in_service = CheckInService(self.repository)
-        self.photo_service = PhotoService("data/photos")
+        self.photo_service = PhotoService(
+            get_photo_directory()
+        )
         self.camera_service = CameraService()
 
         back_arrow_path = icons_path / "back-arrow.png"
