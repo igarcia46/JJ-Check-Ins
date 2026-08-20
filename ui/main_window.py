@@ -2,7 +2,7 @@ from pathlib import Path
 
 import cv2
 import customtkinter as ctk
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 from services.camera_service import CameraService
 from services.check_in_service import CheckInService
@@ -16,7 +16,10 @@ class MainWindow(ctk.CTk):
         super().__init__()
 
         self.title("Jonathan Jennings Visitor Check-In")
+        icons_path = Path(__file__).resolve().parent.parent / "assets" / "icons"
+        self.iconbitmap(str(icons_path / "JJ109PrimaryLogo.ico"))
         self.geometry("1000x1000")
+        self.resizable(False, False)
         self.current_screen = "welcome"
 
         self.repository = ExcelRepository("data/check_ins.xlsx")
@@ -24,17 +27,32 @@ class MainWindow(ctk.CTk):
         self.photo_service = PhotoService("data/photos")
         self.camera_service = CameraService()
 
-        back_arrow_path = (
-            Path(__file__).resolve().parent.parent
-            / "assets"
-            / "icons"
-            / "back-arrow.png"
-        )
+        back_arrow_path = icons_path / "back-arrow.png"
         back_arrow = Image.open(back_arrow_path)
         self.back_arrow_image = ctk.CTkImage(
             light_image=back_arrow,
             dark_image=back_arrow,
             size=(46, 46),
+        )
+
+        welcome_background = Image.open(
+            icons_path / "JJ109PrimaryLogo.webp"
+        )
+        welcome_background = ImageEnhance.Brightness(
+            welcome_background
+        ).enhance(0.35)
+        background_scale = min(
+            800 / welcome_background.width,
+            800 / welcome_background.height,
+        )
+        background_size = (
+            round(welcome_background.width * background_scale),
+            round(welcome_background.height * background_scale),
+        )
+        self.welcome_background_image = ctk.CTkImage(
+            light_image=welcome_background,
+            dark_image=welcome_background,
+            size=background_size,
         )
 
         self.captured_photo = None
@@ -81,6 +99,17 @@ class MainWindow(ctk.CTk):
     # -------------------------
 
     def _build_welcome_screen(self):
+        self.welcome_background_label = ctk.CTkLabel(
+            self.welcome_screen,
+            text="",
+            image=self.welcome_background_image,
+        )
+        self.welcome_background_label.place(
+            relx=0.5,
+            rely=0.5,
+            anchor="center",
+        )
+
         title = ctk.CTkLabel(
             self.welcome_screen,
             text="Welcome",
