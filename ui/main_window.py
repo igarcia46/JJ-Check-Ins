@@ -130,26 +130,14 @@ class MainWindow(ctk.CTk):
         )
         title.pack(pady=(60, 30))
 
-        name_label = ctk.CTkLabel(
-            self.form_screen,
-            text="Name",
-            anchor="w",
-        )
-
-        name_label.pack(
-            fill="x",
-            padx=250,
-        )
-
         self.name_entry = ctk.CTkEntry(
             self.form_screen,
+            placeholder_text="Name",
             height=50,
             width=500,
         )
 
-        self.name_entry.pack(
-            pady=(5, 15),
-        )
+        self.name_entry.pack(pady=10)
 
         self.email_entry = ctk.CTkEntry(
             self.form_screen,
@@ -167,13 +155,35 @@ class MainWindow(ctk.CTk):
         )
         self.phone_entry.pack(pady=10)
 
-        self.reason_entry = ctk.CTkEntry(
+        # container for reason label + dropdown so they stay aligned with other inputs
+        self.reason_container = ctk.CTkFrame(
             self.form_screen,
-            placeholder_text="Reason for Visit",
-            height=50,
             width=500,
+            fg_color="transparent",
         )
-        self.reason_entry.pack(pady=10)
+        self.reason_container.pack(pady=(10, 50))
+
+        self.reason_label = ctk.CTkLabel(
+            self.reason_container,
+            text="Reason for visit",
+            anchor="w",
+        )
+        self.reason_label.pack(fill="x")
+
+        # create option menu and attempt to style the dropdown button separately
+        self.reason_entry = ctk.CTkOptionMenu(
+            self.reason_container,
+            values=["Observation", "Meeting", "Doctor"],
+            width=500,
+            height=50,
+            corner_radius=8,
+            fg_color=self.name_entry.cget("fg_color"),
+            button_color="#3a7ebf",
+            button_hover_color="#1f538d",
+        )
+
+        self.reason_entry.set("Observation")
+        self.reason_entry.pack()
 
         self.form_error_label = ctk.CTkLabel(
             self.form_screen,
@@ -203,7 +213,11 @@ class MainWindow(ctk.CTk):
             pady=20,
         )
 
-        self.name_entry.focus()
+        # Do not autofocus any input so user sees placeholders
+        try:
+            self.focus_set()
+        except Exception:
+            pass
 
     def _back_to_welcome(self):
         self._clear_form()
@@ -521,7 +535,13 @@ class MainWindow(ctk.CTk):
         self.name_entry.delete(0, "end")
         self.email_entry.delete(0, "end")
         self.phone_entry.delete(0, "end")
-        self.reason_entry.delete(0, "end")
+        try:
+            self.reason_entry.set("Observation")
+        except Exception:
+            try:
+                self.reason_entry.delete(0, "end")
+            except Exception:
+                pass
 
         self.form_error_label.configure(text="")
 
