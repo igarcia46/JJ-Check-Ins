@@ -690,7 +690,7 @@ class MainWindow(ctk.CTk):
         self.name_entry.delete(0, "end")
         self.phone_entry.delete(0, "end")
         try:
-            self.reason_entry.set("Observation")
+            self.reason_entry.set("Observation/Observación")
         except Exception:
             try:
                 self.reason_entry.delete(0, "end")
