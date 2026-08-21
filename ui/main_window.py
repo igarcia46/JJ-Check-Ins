@@ -66,6 +66,8 @@ class MainWindow(ctk.CTk):
 
         self.captured_photo = None
         self.camera_running = False
+        self.camera_start_job = None
+        self.camera_update_job = None
 
         self.current_frame = None
 
@@ -326,6 +328,16 @@ class MainWindow(ctk.CTk):
             
         )
 
+        self.camera_selector = ctk.CTkOptionMenu(
+            self.photo_screen,
+            values=["Looking for cameras..."],
+            width=400,
+            height=42,
+            command=self._change_camera,
+            state="disabled",
+        )
+        self.camera_selector.pack(pady=(0, 10))
+
         self.photo_button = ctk.CTkButton(
             self.photo_screen,
             text="Take Photo",
@@ -350,6 +362,8 @@ class MainWindow(ctk.CTk):
         self._hide_all_screens()
 
         self.captured_photo = None
+        self.current_frame = None
+        self._show_camera_status("Starting camera...")
 
         self.photo_button.configure(
             text="Take Photo"
@@ -367,19 +381,79 @@ class MainWindow(ctk.CTk):
             pady=20,
         )
 
-        self._start_camera()
+        # Give Tk a chance to finish drawing the photo screen before the
+        # blocking Windows camera scan begins.
+        self.camera_start_job = self.after(50, self._start_camera)
 
     def _start_camera(self):
+        self.camera_start_job = None
+
+        if self.current_screen != "photo":
+            return
+
         try:
-            self.camera_service.start()
+            self.camera_selector.configure(
+                values=["Looking for cameras..."],
+                state="disabled",
+            )
+            self.camera_selector.set("Looking for cameras...")
+
+            camera_indices = self.camera_service.discover_cameras()
+            if not camera_indices:
+                raise RuntimeError("No working camera could be found.")
+
+            camera_options = []
+            self.camera_indices = {}
+
+            for index in camera_indices:
+                camera_name = self.camera_service.get_camera_name(index)
+                option_name = camera_name
+
+                # Keep dropdown values unique when two identical cameras are
+                # connected and Windows reports the same friendly name.
+                if option_name in self.camera_indices:
+                    option_name = f"{camera_name} (Camera {index + 1})"
+
+                camera_options.append(option_name)
+                self.camera_indices[option_name] = index
+
+            selected_camera = camera_options[0]
+            self.camera_selector.configure(
+                values=camera_options,
+                state="normal",
+            )
+            self.camera_selector.set(selected_camera)
+
+            self.camera_service.start(
+                self.camera_indices[selected_camera]
+            )
             self.camera_running = True
 
             self._update_camera()
 
         except RuntimeError as error:
-            self.camera_label.configure(
-                text=str(error)
-            )
+            self._show_camera_status(str(error))
+
+    def _change_camera(self, selection):
+        camera_index = self.camera_indices.get(selection)
+        if camera_index is None:
+            return
+
+        self.camera_running = False
+        self.captured_photo = None
+        self.current_frame = None
+        self.photo_button.configure(text="Take Photo")
+        self.submit_button.configure(
+            state="disabled",
+            fg_color=["#3a7ebf", "#1f538d"],
+        )
+        self._show_camera_status(f"Starting {selection}...")
+
+        try:
+            self.camera_service.start(camera_index)
+            self.camera_running = True
+        except RuntimeError as error:
+            self._show_camera_status(str(error))
 
     def _back_to_form(self):
         self._stop_camera()
@@ -387,14 +461,13 @@ class MainWindow(ctk.CTk):
         self.captured_photo = None
         self.current_frame = None
 
-        self.camera_label.configure(
-            image=None,
-            text="Starting camera...",
-        )
+        self._show_camera_status("Starting camera...")
 
         self._show_form_screen()
 
     def _update_camera(self):
+        self.camera_update_job = None
+
         if not self.camera_running:
             return
 
@@ -407,11 +480,28 @@ class MainWindow(ctk.CTk):
                 self._display_frame(frame)
 
         except RuntimeError as error:
-            self.camera_label.configure(
-                text=str(error)
-            )
+            self.camera_running = False
+            self._show_camera_status(str(error))
 
-        self.after(15, self._update_camera)
+        self.camera_update_job = self.after(15, self._update_camera)
+
+    def _show_camera_status(self, message):
+        placeholder = Image.new(
+            "RGB",
+            (600, 420),
+            color="#2b2b2b",
+        )
+        placeholder_image = ctk.CTkImage(
+            light_image=placeholder,
+            dark_image=placeholder,
+            size=(600, 420),
+        )
+        self.camera_label.configure(
+            image=placeholder_image,
+            text=message,
+            compound="center",
+        )
+        self.camera_label.image = placeholder_image
 
     def _display_frame(self, frame):
         frame = cv2.cvtColor(
@@ -432,6 +522,7 @@ class MainWindow(ctk.CTk):
         self.camera_label.configure(
             image=camera_image,
             text="",
+            compound="center",
         )
 
         self.camera_label.image = camera_image
@@ -561,10 +652,7 @@ class MainWindow(ctk.CTk):
 
         self._clear_form()
 
-        self.camera_label.configure(
-            image=None,
-            text="Starting camera...",
-        )
+        self._show_camera_status("Starting camera...")
 
         self._show_welcome_screen()
 
@@ -574,7 +662,22 @@ class MainWindow(ctk.CTk):
 
     def _stop_camera(self):
         self.camera_running = False
+
+        if self.camera_start_job is not None:
+            self.after_cancel(self.camera_start_job)
+            self.camera_start_job = None
+
+        if self.camera_update_job is not None:
+            self.after_cancel(self.camera_update_job)
+            self.camera_update_job = None
+
         self.camera_service.release()
+        self.camera_indices = {}
+        self.camera_selector.configure(
+            values=[],
+            state="disabled",
+        )
+        self.camera_selector.set("")
 
     def _on_close(self):
         if self.inactivity_timer is not None:
@@ -587,7 +690,7 @@ class MainWindow(ctk.CTk):
         self.name_entry.delete(0, "end")
         self.phone_entry.delete(0, "end")
         try:
-            self.reason_entry.set("Observation")
+            self.reason_entry.set("Observation/Observación")
         except Exception:
             try:
                 self.reason_entry.delete(0, "end")
@@ -607,10 +710,7 @@ class MainWindow(ctk.CTk):
 
             self._clear_form()
 
-            self.camera_label.configure(
-                image=None,
-                text="Starting camera...",
-            )
+            self._show_camera_status("Starting camera...")
 
             self._show_welcome_screen()
 
