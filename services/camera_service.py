@@ -30,18 +30,14 @@ class CameraService:
             file.write(message + "\n")
 
     def start(self):
-        self._log("\n==============================")
-        self._log("Starting FULL camera scan...")
-        self._log("==============================")
-
-        working_cameras = []
+        self._log("Starting camera scan...")
 
         for index in range(5):
             self._log(f"Testing camera index {index}")
 
             camera = cv2.VideoCapture(
                 index,
-                cv2.CAP_DSHOW,
+                cv2.CAP_DSHOW
             )
 
             if not camera.isOpened():
@@ -70,48 +66,16 @@ class CameraService:
             height, width = frame.shape[:2]
 
             self._log(
-                f"Index {index}: SUCCESS - {width}x{height}"
+                f"Index {index}: SUCCESS - "
+                f"{width}x{height}"
             )
 
-            working_cameras.append(index)
+            self.camera = camera
+            self.camera_index = index
+            self.current_frame = frame
 
-            camera.release()
+            return
 
-        self._log(
-            f"Working camera indexes: {working_cameras}"
+        raise RuntimeError(
+            "No working camera could be found."
         )
-
-        # After diagnosis, use the first working camera
-        if not working_cameras:
-            raise RuntimeError(
-                "No working camera could be found."
-            )
-
-        selected_index = working_cameras[0]
-
-        self._log(
-            f"Opening camera index {selected_index} for application"
-        )
-
-        self.camera = cv2.VideoCapture(
-            selected_index,
-            cv2.CAP_DSHOW,
-        )
-
-        if not self.camera.isOpened():
-            raise RuntimeError(
-                f"Could not reopen camera index {selected_index}."
-            )
-
-        self.camera_index = selected_index
-
-        success, frame = self.camera.read()
-
-        if not success or frame is None:
-            self.release()
-
-            raise RuntimeError(
-                f"Could not read from camera index {selected_index}."
-            )
-
-        self.current_frame = frame
